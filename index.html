@@ -1,322 +1,718 @@
 <!doctype html>
 <html lang="pl">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Kalkulator kosztów wideocalli (participant-minutes)</title>
-  <style>
-    :root { color-scheme: light dark; }
-    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; padding: 24px; line-height: 1.35; }
-    .wrap { max-width: 1100px; margin: 0 auto; }
-    h1 { font-size: 20px; margin: 0 0 12px; }
-    .muted { opacity: .8; font-size: 13px; }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
-    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>
+      Kalkulator kosztów wideocalli + nagrywanie (Zoom Video SDK i porównanie)
+    </title>
+    <style>
+      :root {
+        color-scheme: light dark;
+      }
+      body {
+        font-family:
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          Arial,
+          sans-serif;
+        margin: 0;
+        padding: 24px;
+        line-height: 1.35;
+      }
+      .wrap {
+        max-width: 1150px;
+        margin: 0 auto;
+      }
+      h1 {
+        font-size: 20px;
+        margin: 0 0 12px;
+      }
+      .muted {
+        opacity: 0.82;
+        font-size: 13px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-top: 16px;
+      }
+      @media (max-width: 980px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .card {
+        border: 1px solid rgba(127, 127, 127, 0.35);
+        border-radius: 14px;
+        padding: 16px;
+        background: rgba(127, 127, 127, 0.06);
+      }
+      .card h2 {
+        font-size: 16px;
+        margin: 0 0 10px;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 180px;
+        gap: 10px;
+        align-items: center;
+        margin: 8px 0;
+      }
+      .row label {
+        font-size: 13px;
+      }
+      input[type="number"],
+      select {
+        width: 100%;
+        padding: 8px 10px;
+        border-radius: 10px;
+        border: 1px solid rgba(127, 127, 127, 0.45);
+        background: transparent;
+      }
+      .hint {
+        font-size: 12px;
+        opacity: 0.75;
+        margin-top: 6px;
+      }
+      .kpi {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 10px;
+      }
+      @media (max-width: 700px) {
+        .kpi {
+          grid-template-columns: 1fr;
+        }
+      }
+      .kpi .box {
+        border: 1px dashed rgba(127, 127, 127, 0.45);
+        border-radius: 12px;
+        padding: 10px;
+      }
+      .kpi .val {
+        font-size: 18px;
+        font-weight: 700;
+        margin-top: 2px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 10px 8px;
+        border-bottom: 1px solid rgba(127, 127, 127, 0.25);
+        font-size: 13px;
+        vertical-align: top;
+      }
+      th {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        opacity: 0.8;
+      }
+      .badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1px solid rgba(127, 127, 127, 0.35);
+        font-size: 12px;
+        opacity: 0.9;
+      }
+      .footer {
+        margin-top: 14px;
+        font-size: 12px;
+        opacity: 0.82;
+      }
+      .btnrow {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+      }
+      button {
+        padding: 8px 10px;
+        border-radius: 10px;
+        border: 1px solid rgba(127, 127, 127, 0.45);
+        background: rgba(127, 127, 127, 0.12);
+        cursor: pointer;
+      }
+      button:hover {
+        filter: brightness(1.05);
+      }
+      .small {
+        font-size: 12px;
+        opacity: 0.82;
+      }
+      .mono {
+        font-family:
+          ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", monospace;
+      }
+      .pill {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1px solid rgba(127, 127, 127, 0.35);
+      }
+      .disabled {
+        opacity: 0.55;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Kalkulator kosztów: streaming + nagrywanie + storage</h1>
+      <div class="muted">
+        <span class="pill mono">call-min / mies.</span> = rozmowy równoległe ×
+        (h/dzień×60) × dni/tydz × tyg./mies. &nbsp;→&nbsp;
+        <span class="pill mono">participant-min / mies.</span> = call-min × śr.
+        liczba uczestników
+        <br />
+        Nagrywanie liczone osobno jako
+        <span class="pill mono">recording-min / mies.</span> = call-min × %
+        nagrywanych rozmów.
+      </div>
 
-    .card { border: 1px solid rgba(127,127,127,.35); border-radius: 14px; padding: 16px; background: rgba(127,127,127,.06); }
-    .card h2 { font-size: 16px; margin: 0 0 10px; }
-    .row { display: grid; grid-template-columns: 1fr 140px; gap: 10px; align-items: center; margin: 8px 0; }
-    .row label { font-size: 13px; }
-    input[type="number"] { width: 100%; padding: 8px 10px; border-radius: 10px; border: 1px solid rgba(127,127,127,.45); background: transparent; }
-    input[type="range"] { width: 100%; }
-    .hint { font-size: 12px; opacity: .75; margin-top: 6px; }
-    .kpi { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .kpi .box { border: 1px dashed rgba(127,127,127,.45); border-radius: 12px; padding: 10px; }
-    .kpi .val { font-size: 18px; font-weight: 700; margin-top: 2px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid rgba(127,127,127,.25); font-size: 13px; }
-    th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; opacity: .8; }
-    .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; border: 1px solid rgba(127,127,127,.35); font-size: 12px; opacity: .9; }
-    .footer { margin-top: 14px; font-size: 12px; opacity: .8; }
-    .btnrow { display:flex; gap:10px; flex-wrap: wrap; margin-top: 10px; }
-    button { padding: 8px 10px; border-radius: 10px; border: 1px solid rgba(127,127,127,.45); background: rgba(127,127,127,.12); cursor: pointer; }
-    button:hover { filter: brightness(1.05); }
-    .small { font-size: 12px; opacity: .8; }
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
-  </style>
-</head>
-<body>
-  <div class="wrap">
-    <h1>Kalkulator kosztów wideocalli (participant-minutes)</h1>
-    <div class="muted">
-      Model liczenia: <span class="mono">call-minutes = równoległe rozmowy × minuty/dzień × dni/tydzień × tygodnie/mies.</span>,
-      potem <span class="mono">participant-minutes = call-minutes × średnia liczba uczestników</span>.
+      <div class="grid">
+        <div class="card">
+          <h2>Parametry obciążenia</h2>
+
+          <div class="row">
+            <label for="concurrentCalls">Równoległe rozmowy</label>
+            <input
+              id="concurrentCalls"
+              type="number"
+              min="0"
+              step="1"
+              value="40"
+            />
+          </div>
+
+          <div class="row">
+            <label for="hoursPerDay">Godzin dziennie</label>
+            <input
+              id="hoursPerDay"
+              type="number"
+              min="0"
+              step="0.25"
+              value="5"
+            />
+          </div>
+
+          <div class="row">
+            <label for="daysPerWeek">Dni w tygodniu</label>
+            <input id="daysPerWeek" type="number" min="0" step="1" value="5" />
+          </div>
+
+          <div class="row">
+            <label for="weeksPerMonth">Tygodni na miesiąc (średnio)</label>
+            <input
+              id="weeksPerMonth"
+              type="number"
+              min="1"
+              step="0.01"
+              value="4.33"
+            />
+          </div>
+
+          <div class="row">
+            <label for="avgParticipants">Śr. liczba uczestników na callu</label>
+            <input
+              id="avgParticipants"
+              type="number"
+              min="1"
+              max="200"
+              step="0.1"
+              value="3"
+            />
+          </div>
+
+          <div class="row">
+            <label for="usdToPln">Kurs USD→PLN</label>
+            <input
+              id="usdToPln"
+              type="number"
+              min="0"
+              step="0.01"
+              value="4.00"
+            />
+          </div>
+
+          <div class="hint">
+            Jeśli masz mieszankę 1–5 osób, ustaw średnią. Koszt streamingu
+            rośnie liniowo z liczbą uczestników.
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Streaming: stawki (USD / participant-minute)</h2>
+
+          <div class="row">
+            <label for="rateZoom">Zoom Video SDK (domyślnie 0.0035)</label>
+            <input
+              id="rateZoom"
+              type="number"
+              min="0"
+              step="0.0001"
+              value="0.0035"
+            />
+          </div>
+
+          <div class="row">
+            <label for="rateDaily">Daily (domyślnie 0.0040)</label>
+            <input
+              id="rateDaily"
+              type="number"
+              min="0"
+              step="0.0001"
+              value="0.0040"
+            />
+          </div>
+
+          <div class="row">
+            <label for="rateTwilio">Twilio Video (domyślnie 0.0040)</label>
+            <input
+              id="rateTwilio"
+              type="number"
+              min="0"
+              step="0.0001"
+              value="0.0040"
+            />
+          </div>
+
+          <div class="row">
+            <label for="rate100ms">100ms (domyślnie 0.0040)</label>
+            <input
+              id="rate100ms"
+              type="number"
+              min="0"
+              step="0.0001"
+              value="0.0040"
+            />
+          </div>
+
+          <div class="row">
+            <label for="rateAgora">Agora (np. HD ~0.00399)</label>
+            <input
+              id="rateAgora"
+              type="number"
+              min="0"
+              step="0.0001"
+              value="0.00399"
+            />
+          </div>
+
+          <div class="btnrow">
+            <button id="resetBtn" type="button">Reset do domyślnych</button>
+            <button id="copyLinkBtn" type="button">
+              Skopiuj link z parametrami
+            </button>
+          </div>
+
+          <div class="footer">
+            Ten panel liczy streaming (participant-minutes). Nagrywanie
+            ustawiasz w kolejnym panelu.
+          </div>
+        </div>
+
+        <div class="card" style="grid-column: 1 / -1">
+          <h2>Nagrywanie (Zoom) — wybierz wariant albo wyłącz</h2>
+
+          <div class="row">
+            <label for="recordingMode">Tryb nagrywania</label>
+            <select id="recordingMode">
+              <option value="none">Brak nagrywania</option>
+              <option value="uc">Universal Credit (per-minute)</option>
+              <option value="payg">
+                PAYG + add-on (miesięczny fee + pula + overage)
+              </option>
+            </select>
+          </div>
+
+          <div class="row">
+            <label for="recordedShare">Jaki % rozmów jest nagrywany?</label>
+            <input
+              id="recordedShare"
+              type="number"
+              min="0"
+              max="100"
+              step="1"
+              value="0"
+            />
+          </div>
+
+          <div class="row">
+            <label for="recordRateUc"
+              >UC: stawka nagrania (USD / minuta nagrania)</label
+            >
+            <input
+              id="recordRateUc"
+              type="number"
+              min="0"
+              step="0.0001"
+              value="0.0100"
+            />
+          </div>
+
+          <div class="row">
+            <label for="recordAddonMonthly"
+              >PAYG: add-on miesięcznie (USD)</label
+            >
+            <input
+              id="recordAddonMonthly"
+              type="number"
+              min="0"
+              step="1"
+              value="100"
+            />
+          </div>
+
+          <div class="row">
+            <label for="recordIncludedMinutes"
+              >PAYG: pula minut nagrania w add-onie (min/mies.)</label
+            >
+            <input
+              id="recordIncludedMinutes"
+              type="number"
+              min="0"
+              step="100"
+              value="30000"
+            />
+          </div>
+
+          <div class="row">
+            <label for="recordRateOverage"
+              >PAYG: overage (USD / minuta po przekroczeniu puli)</label
+            >
+            <input
+              id="recordRateOverage"
+              type="number"
+              min="0"
+              step="0.0001"
+              value="0.0150"
+            />
+          </div>
+
+          <div class="row">
+            <label for="storageUsdPerGb"
+              >Storage: stawka (USD / GB / miesiąc)</label
+            >
+            <input
+              id="storageUsdPerGb"
+              type="number"
+              min="0"
+              step="0.01"
+              value="0.25"
+            />
+          </div>
+
+          <div class="row">
+            <label for="gbPerHour"
+              >Szacunek rozmiaru nagrania (GB / godzina)</label
+            >
+            <input
+              id="gbPerHour"
+              type="number"
+              min="0"
+              step="0.1"
+              value="1.5"
+            />
+          </div>
+
+          <div class="hint">
+            Uwaga: GB/h zależy od jakości, liczby strumieni i kompresji. 1–2
+            GB/h to często sensowny „placeholder”.
+          </div>
+        </div>
+
+        <div class="card" style="grid-column: 1 / -1">
+          <h2>Wyniki</h2>
+
+          <div class="kpi">
+            <div class="box">
+              <div class="small">Call-minutes / miesiąc</div>
+              <div class="val mono" id="callMinutes">—</div>
+            </div>
+            <div class="box">
+              <div class="small">Participant-minutes / miesiąc</div>
+              <div class="val mono" id="participantMinutes">—</div>
+            </div>
+            <div class="box">
+              <div class="small">Recording-minutes / miesiąc</div>
+              <div class="val mono" id="recordMinutes">—</div>
+            </div>
+          </div>
+
+          <table id="resultsTable">
+            <thead>
+              <tr>
+                <th>Dostawca</th>
+                <th>Streaming (USD)</th>
+                <th>Nagrywanie (USD)</th>
+                <th>Storage (USD)</th>
+                <th>Suma (USD)</th>
+                <th>Suma (PLN)</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+
+          <div class="footer">
+            Nagrywanie i storage są liczone tylko dla Zoom (pozostali dostawcy w
+            tym kalkulatorze nie mają tu osobnych stawek). Jeśli chcesz, można
+            dodać analogiczne pola per dostawca.
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="grid">
-      <div class="card">
-        <h2>Parametry obciążenia</h2>
+    <script>
+      (function () {
+        const $ = (id) => document.getElementById(id);
 
-        <div class="row">
-          <label for="concurrentCalls">Równoległe rozmowy (w danym momencie)</label>
-          <input id="concurrentCalls" type="number" min="0" step="1" value="40" />
-        </div>
+        const defaults = {
+          concurrentCalls: 40,
+          hoursPerDay: 5,
+          daysPerWeek: 5,
+          weeksPerMonth: 4.33,
+          avgParticipants: 3,
+          usdToPln: 4.0,
 
-        <div class="row">
-          <label for="hoursPerDay">Godzin dziennie</label>
-          <input id="hoursPerDay" type="number" min="0" step="0.25" value="5" />
-        </div>
+          rateZoom: 0.0035,
+          rateDaily: 0.004,
+          rateTwilio: 0.004,
+          rate100ms: 0.004,
+          rateAgora: 0.00399,
 
-        <div class="row">
-          <label for="daysPerWeek">Dni w tygodniu</label>
-          <input id="daysPerWeek" type="number" min="0" step="1" value="5" />
-        </div>
+          recordingMode: "none",
+          recordedShare: 0,
 
-        <div class="row">
-          <label for="weeksPerMonth">Tygodni na miesiąc (średnio)</label>
-          <input id="weeksPerMonth" type="number" min="1" step="0.01" value="4.33" />
-        </div>
+          recordRateUc: 0.01,
 
-        <div class="row">
-          <label for="avgParticipants">Średnia liczba uczestników na callu</label>
-          <input id="avgParticipants" type="number" min="1" max="50" step="0.1" value="3" />
-        </div>
+          recordAddonMonthly: 100,
+          recordIncludedMinutes: 30000,
+          recordRateOverage: 0.015,
 
-        <div class="row">
-          <label for="showScenarios">Pokaż scenariusze 2/3/5 osób</label>
-          <input id="showScenarios" type="number" min="0" max="1" step="1" value="1" />
-        </div>
+          storageUsdPerGb: 0.25,
+          gbPerHour: 1.5,
+        };
 
-        <div class="hint">
-          Wskazówka: jeżeli zwykle są 2 osoby (nauczyciel + uczeń), ustaw średnią na 2.
-          Jeśli często dołączają 3–5 osób, średnia rośnie i koszt rośnie liniowo.
-        </div>
-      </div>
+        const providers = [
+          { key: "zoom", name: "Zoom Video SDK", rateId: "rateZoom" },
+          { key: "daily", name: "Daily", rateId: "rateDaily" },
+          { key: "twilio", name: "Twilio Video", rateId: "rateTwilio" },
+          { key: "100ms", name: "100ms", rateId: "rate100ms" },
+          { key: "agora", name: "Agora", rateId: "rateAgora" },
+        ];
 
-      <div class="card">
-        <h2>Stawki (USD za participant-minute)</h2>
+        function fmtInt(n) {
+          if (!isFinite(n)) return "—";
+          return Math.round(n).toLocaleString("pl-PL");
+        }
+        function fmtMoney(n) {
+          if (!isFinite(n)) return "—";
+          return n.toLocaleString("pl-PL", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          });
+        }
+        function getNum(id) {
+          const v = parseFloat($(id).value);
+          return isFinite(v) ? v : 0;
+        }
 
-        <div class="row">
-          <label for="rateZoom">Zoom Video SDK (domyślnie 0.0035)</label>
-          <input id="rateZoom" type="number" min="0" step="0.0001" value="0.0035" />
-        </div>
+        function calcBase() {
+          const concurrentCalls = getNum("concurrentCalls");
+          const hoursPerDay = getNum("hoursPerDay");
+          const daysPerWeek = getNum("daysPerWeek");
+          const weeksPerMonth = getNum("weeksPerMonth");
+          const avgParticipants = getNum("avgParticipants");
 
-        <div class="row">
-          <label for="rateDaily">Daily (domyślnie 0.0040)</label>
-          <input id="rateDaily" type="number" min="0" step="0.0001" value="0.0040" />
-        </div>
+          const minutesPerDay = hoursPerDay * 60;
+          const callMinutesMonth =
+            concurrentCalls * minutesPerDay * daysPerWeek * weeksPerMonth;
+          const participantMinutesMonth = callMinutesMonth * avgParticipants;
 
-        <div class="row">
-          <label for="rateTwilio">Twilio Video (domyślnie 0.0040)</label>
-          <input id="rateTwilio" type="number" min="0" step="0.0001" value="0.0040" />
-        </div>
+          return { callMinutesMonth, participantMinutesMonth };
+        }
 
-        <div class="row">
-          <label for="rate100ms">100ms (domyślnie 0.0040)</label>
-          <input id="rate100ms" type="number" min="0" step="0.0001" value="0.0040" />
-        </div>
+        function calcRecording(callMinutesMonth) {
+          const mode = $("recordingMode").value;
+          const share =
+            Math.max(0, Math.min(100, getNum("recordedShare"))) / 100;
+          const recordMinutesMonth = callMinutesMonth * share;
 
-        <div class="row">
-          <label for="rateAgora">Agora (np. HD ~0.00399)</label>
-          <input id="rateAgora" type="number" min="0" step="0.0001" value="0.00399" />
-        </div>
+          // storage estimate
+          const gbPerHour = getNum("gbPerHour");
+          const storageUsdPerGb = getNum("storageUsdPerGb");
+          const hoursRecorded = recordMinutesMonth / 60;
+          const gbMonth = hoursRecorded * gbPerHour;
+          const storageUsd = gbMonth * storageUsdPerGb;
 
-        <div class="row">
-          <label for="usdToPln">Kurs USD→PLN (opcjonalnie)</label>
-          <input id="usdToPln" type="number" min="0" step="0.01" value="4.00" />
-        </div>
+          let recordUsd = 0;
 
-        <div class="btnrow">
-          <button id="resetBtn" type="button">Reset do wartości domyślnych</button>
-          <button id="copyLinkBtn" type="button">Skopiuj link z parametrami</button>
-        </div>
+          if (mode === "none" || recordMinutesMonth <= 0) {
+            recordUsd = 0;
+            return { mode, recordMinutesMonth, recordUsd, storageUsd, gbMonth };
+          }
 
-        <div class="footer">
-          Uwaga: to jest kalkulator kosztu „wideo-minut”. Nie uwzględnia nagrywania, storage, czatu, tablicy, ani kosztów dev/hosting.
-        </div>
-      </div>
+          if (mode === "uc") {
+            const rate = getNum("recordRateUc");
+            recordUsd = recordMinutesMonth * rate;
+            return { mode, recordMinutesMonth, recordUsd, storageUsd, gbMonth };
+          }
 
-      <div class="card" style="grid-column: 1 / -1;">
-        <h2>Wyniki</h2>
+          if (mode === "payg") {
+            const addon = getNum("recordAddonMonthly");
+            const included = getNum("recordIncludedMinutes");
+            const overRate = getNum("recordRateOverage");
+            const overMinutes = Math.max(0, recordMinutesMonth - included);
+            recordUsd = addon + overMinutes * overRate;
+            return { mode, recordMinutesMonth, recordUsd, storageUsd, gbMonth };
+          }
 
-        <div class="kpi">
-          <div class="box">
-            <div class="small">Call-minutes / miesiąc</div>
-            <div class="val mono" id="callMinutes">—</div>
-          </div>
-          <div class="box">
-            <div class="small">Participant-minutes / miesiąc</div>
-            <div class="val mono" id="participantMinutes">—</div>
-          </div>
-        </div>
+          return {
+            mode,
+            recordMinutesMonth,
+            recordUsd: 0,
+            storageUsd,
+            gbMonth,
+          };
+        }
 
-        <table id="resultsTable">
-          <thead>
-            <tr>
-              <th>Dostawca</th>
-              <th>Stawka (USD / participant-min)</th>
-              <th>Koszt / miesiąc (USD)</th>
-              <th>Koszt / miesiąc (PLN)</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+        function setRecordingUiState() {
+          const mode = $("recordingMode").value;
 
-        <div id="scenarioBlock" style="margin-top: 14px;"></div>
-      </div>
-    </div>
-  </div>
+          const ucIds = ["recordRateUc"];
+          const paygIds = [
+            "recordAddonMonthly",
+            "recordIncludedMinutes",
+            "recordRateOverage",
+          ];
 
-<script>
-(function () {
-  const $ = (id) => document.getElementById(id);
+          ucIds.forEach((id) =>
+            $(id)
+              .closest(".row")
+              .classList.toggle("disabled", mode !== "uc"),
+          );
+          paygIds.forEach((id) =>
+            $(id)
+              .closest(".row")
+              .classList.toggle("disabled", mode !== "payg"),
+          );
 
-  const defaults = {
-    concurrentCalls: 40,
-    hoursPerDay: 5,
-    daysPerWeek: 5,
-    weeksPerMonth: 4.33,
-    avgParticipants: 3,
-    showScenarios: 1,
-    rateZoom: 0.0035,
-    rateDaily: 0.0040,
-    rateTwilio: 0.0040,
-    rate100ms: 0.0040,
-    rateAgora: 0.00399,
-    usdToPln: 4.00,
-  };
+          // still editable, but visually de-emphasized; you can also disable inputs if you prefer
+          ucIds.forEach((id) => ($(id).disabled = mode !== "uc"));
+          paygIds.forEach((id) => ($(id).disabled = mode !== "payg"));
+        }
 
-  const providers = [
-    { key: "zoom",  name: "Zoom Video SDK",  rateId: "rateZoom"  },
-    { key: "daily", name: "Daily",          rateId: "rateDaily" },
-    { key: "twilio",name: "Twilio Video",   rateId: "rateTwilio"},
-    { key: "100ms", name: "100ms",          rateId: "rate100ms" },
-    { key: "agora", name: "Agora",          rateId: "rateAgora" },
-  ];
+        function render() {
+          setRecordingUiState();
 
-  function fmtInt(n) {
-    if (!isFinite(n)) return "—";
-    return Math.round(n).toLocaleString("pl-PL");
-  }
-  function fmtMoney(n) {
-    if (!isFinite(n)) return "—";
-    return n.toLocaleString("pl-PL", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }
-  function getNum(id) {
-    const v = parseFloat($(id).value);
-    return isFinite(v) ? v : 0;
-  }
+          const usdToPln = getNum("usdToPln");
+          const { callMinutesMonth, participantMinutesMonth } = calcBase();
+          const rec = calcRecording(callMinutesMonth);
 
-  function calc(callCount, hPerDay, dPerWeek, wPerMonth, avgP) {
-    const minutesPerDay = hPerDay * 60;
-    const callMinutesMonth = callCount * minutesPerDay * dPerWeek * wPerMonth;
-    const participantMinutesMonth = callMinutesMonth * avgP;
-    return { callMinutesMonth, participantMinutesMonth };
-  }
+          $("callMinutes").textContent = fmtInt(callMinutesMonth);
+          $("participantMinutes").textContent = fmtInt(participantMinutesMonth);
+          $("recordMinutes").textContent = fmtInt(rec.recordMinutesMonth);
 
-  function render() {
-    const concurrentCalls = getNum("concurrentCalls");
-    const hoursPerDay     = getNum("hoursPerDay");
-    const daysPerWeek     = getNum("daysPerWeek");
-    const weeksPerMonth   = getNum("weeksPerMonth");
-    const avgParticipants = getNum("avgParticipants");
-    const usdToPln        = getNum("usdToPln");
-    const showScenarios   = Math.round(getNum("showScenarios")) === 1;
+          const tbody = $("resultsTable").querySelector("tbody");
+          tbody.innerHTML = "";
 
-    const { callMinutesMonth, participantMinutesMonth } =
-      calc(concurrentCalls, hoursPerDay, daysPerWeek, weeksPerMonth, avgParticipants);
+          const rows = providers
+            .map((p) => {
+              const rate = getNum(p.rateId);
+              const streamingUsd = participantMinutesMonth * rate;
 
-    $("callMinutes").textContent = fmtInt(callMinutesMonth);
-    $("participantMinutes").textContent = fmtInt(participantMinutesMonth);
+              // Recording+storage only for Zoom in this version
+              const recordUsd = p.key === "zoom" ? rec.recordUsd : 0;
+              const storageUsd = p.key === "zoom" ? rec.storageUsd : 0;
 
-    const tbody = $("resultsTable").querySelector("tbody");
-    tbody.innerHTML = "";
+              const totalUsd = streamingUsd + recordUsd + storageUsd;
+              const totalPln = totalUsd * usdToPln;
 
-    const rows = providers.map(p => {
-      const rate = getNum(p.rateId);
-      const costUsd = participantMinutesMonth * rate;
-      const costPln = costUsd * usdToPln;
-      return { ...p, rate, costUsd, costPln };
-    }).sort((a,b) => a.costUsd - b.costUsd);
+              return {
+                ...p,
+                rate,
+                streamingUsd,
+                recordUsd,
+                storageUsd,
+                totalUsd,
+                totalPln,
+              };
+            })
+            .sort((a, b) => a.totalUsd - b.totalUsd);
 
-    for (const r of rows) {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${r.name} <span class="badge">wariant: ${r.key}</span></td>
-        <td class="mono">${r.rate.toFixed(4)}</td>
-        <td class="mono">${fmtMoney(r.costUsd)}</td>
-        <td class="mono">${fmtMoney(r.costPln)}</td>
+          for (const r of rows) {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+        <td>${r.name} <span class="badge">${r.key}</span></td>
+        <td class="mono">${fmtMoney(r.streamingUsd)}</td>
+        <td class="mono">${fmtMoney(r.recordUsd)}</td>
+        <td class="mono">${fmtMoney(r.storageUsd)}</td>
+        <td class="mono"><b>${fmtMoney(r.totalUsd)}</b></td>
+        <td class="mono"><b>${fmtMoney(r.totalPln)}</b></td>
       `;
-      tbody.appendChild(tr);
-    }
+            tbody.appendChild(tr);
+          }
+        }
 
-    const scenarioBlock = $("scenarioBlock");
-    if (!showScenarios) {
-      scenarioBlock.innerHTML = "";
-      return;
-    }
+        function reset() {
+          for (const [k, v] of Object.entries(defaults)) {
+            $(k).value = v;
+          }
+          render();
+        }
 
-    const scenarios = [2, 3, 5];
-    let html = `<div class="small" style="margin-bottom:8px; opacity:.85;">Szybkie scenariusze (przy tych samych parametrach czasu i równoległości):</div>`;
-    html += `<table><thead><tr>
-      <th>Śr. uczestników</th>
-      <th>Participant-min / mies.</th>
-      <th>Najtańszy dostawca (USD / mies.)</th>
-      <th>Najtańszy dostawca (PLN / mies.)</th>
-    </tr></thead><tbody>`;
+        function loadFromUrl() {
+          const params = new URLSearchParams(location.search);
+          for (const key of Object.keys(defaults)) {
+            if (params.has(key)) $(key).value = params.get(key);
+          }
+        }
 
-    for (const s of scenarios) {
-      const { participantMinutesMonth: pm } = calc(concurrentCalls, hoursPerDay, daysPerWeek, weeksPerMonth, s);
-      const best = providers.map(p => {
-        const rate = getNum(p.rateId);
-        const costUsd = pm * rate;
-        return { name: p.name, costUsd };
-      }).sort((a,b) => a.costUsd - b.costUsd)[0];
+        function makeShareUrl() {
+          const params = new URLSearchParams();
+          for (const key of Object.keys(defaults))
+            params.set(key, $(key).value);
+          const base = location.origin + location.pathname;
+          return base + "?" + params.toString();
+        }
 
-      html += `<tr>
-        <td class="mono">${s.toFixed(1)}</td>
-        <td class="mono">${fmtInt(pm)}</td>
-        <td class="mono">${best.name} — ${fmtMoney(best.costUsd)}</td>
-        <td class="mono">${fmtMoney(best.costUsd * usdToPln)}</td>
-      </tr>`;
-    }
-    html += `</tbody></table>`;
-    scenarioBlock.innerHTML = html;
-  }
+        async function copyLink() {
+          const url = makeShareUrl();
+          try {
+            await navigator.clipboard.writeText(url);
+            $("copyLinkBtn").textContent = "Skopiowano ✅";
+            setTimeout(
+              () =>
+                ($("copyLinkBtn").textContent = "Skopiuj link z parametrami"),
+              1200,
+            );
+          } catch {
+            prompt("Skopiuj ręcznie:", url);
+          }
+        }
 
-  function reset() {
-    for (const [k,v] of Object.entries(defaults)) {
-      $(k).value = v;
-    }
-    render();
-  }
+        // wiring
+        const ids = Object.keys(defaults);
+        ids.forEach((id) => $(id).addEventListener("input", render));
+        $("recordingMode").addEventListener("change", render);
+        $("resetBtn").addEventListener("click", reset);
+        $("copyLinkBtn").addEventListener("click", copyLink);
 
-  // URL params (dla share/linków)
-  function loadFromUrl() {
-    const params = new URLSearchParams(location.search);
-    for (const key of Object.keys(defaults)) {
-      if (params.has(key)) $(key).value = params.get(key);
-    }
-  }
-
-  function makeShareUrl() {
-    const params = new URLSearchParams();
-    for (const key of Object.keys(defaults)) params.set(key, $(key).value);
-    const base = location.origin + location.pathname;
-    return base + "?" + params.toString();
-  }
-
-  async function copyLink() {
-    const url = makeShareUrl();
-    try {
-      await navigator.clipboard.writeText(url);
-      $("copyLinkBtn").textContent = "Skopiowano ✅";
-      setTimeout(() => $("copyLinkBtn").textContent = "Skopiuj link z parametrami", 1200);
-    } catch {
-      prompt("Skopiuj ręcznie:", url);
-    }
-  }
-
-  // wiring
-  const ids = Object.keys(defaults);
-  ids.forEach(id => $(id).addEventListener("input", render));
-  $("resetBtn").addEventListener("click", reset);
-  $("copyLinkBtn").addEventListener("click", copyLink);
-
-  loadFromUrl();
-  render();
-})();
-</script>
-</body>
+        loadFromUrl();
+        render();
+      })();
+    </script>
+  </body>
 </html>
-
