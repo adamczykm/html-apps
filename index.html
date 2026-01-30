@@ -165,6 +165,9 @@
       .disabled {
         opacity: 0.55;
       }
+      .zoom-row {
+        border-top: 2px solid rgba(127, 127, 127, 0.5);
+      }
     </style>
   </head>
   <body>
@@ -460,6 +463,7 @@
                 <th>Storage (USD)</th>
                 <th>Suma (USD)</th>
                 <th>Suma (PLN)</th>
+                <th>Koszt/godz (USD)</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -640,6 +644,10 @@
               const totalUsd = streamingUsd + recordUsd + storageUsd;
               const totalPln = totalUsd * usdToPln;
 
+              // Cost per hour of lessons (based on call-minutes)
+              const hoursMonth = callMinutesMonth / 60;
+              const costPerHour = hoursMonth > 0 ? totalUsd / hoursMonth : 0;
+
               return {
                 ...p,
                 rate,
@@ -648,12 +656,16 @@
                 storageUsd,
                 totalUsd,
                 totalPln,
+                costPerHour,
               };
             })
             .sort((a, b) => a.totalUsd - b.totalUsd);
 
           for (const r of rows) {
             const tr = document.createElement("tr");
+            if (r.key === "zoom") {
+              tr.classList.add("zoom-row");
+            }
             tr.innerHTML = `
         <td>${r.name} <span class="badge">${r.key}</span></td>
         <td class="mono">${fmtMoney(r.streamingUsd)}</td>
@@ -661,6 +673,7 @@
         <td class="mono">${fmtMoney(r.storageUsd)}</td>
         <td class="mono"><b>${fmtMoney(r.totalUsd)}</b></td>
         <td class="mono"><b>${fmtMoney(r.totalPln)}</b></td>
+        <td class="mono">${fmtMoney(r.costPerHour)}</td>
       `;
             tbody.appendChild(tr);
           }
