@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Kalkulator kosztów wideocalli (participant-minutes)</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; padding: 24px; line-height: 1.35; }
+    .wrap { max-width: 1100px; margin: 0 auto; }
+    h1 { font-size: 20px; margin: 0 0 12px; }
+    .muted { opacity: .8; font-size: 13px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { border: 1px solid rgba(127,127,127,.35); border-radius: 14px; padding: 16px; background: rgba(127,127,127,.06); }
+    .card h2 { font-size: 16px; margin: 0 0 10px; }
+    .row { display: grid; grid-template-columns: 1fr 140px; gap: 10px; align-items: center; margin: 8px 0; }
+    .row label { font-size: 13px; }
+    input[type="number"] { width: 100%; padding: 8px 10px; border-radius: 10px; border: 1px solid rgba(127,127,127,.45); background: transparent; }
+    input[type="range"] { width: 100%; }
+    .hint { font-size: 12px; opacity: .75; margin-top: 6px; }
+    .kpi { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .kpi .box { border: 1px dashed rgba(127,127,127,.45); border-radius: 12px; padding: 10px; }
+    .kpi .val { font-size: 18px; font-weight: 700; margin-top: 2px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid rgba(127,127,127,.25); font-size: 13px; }
+    th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; opacity: .8; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; border: 1px solid rgba(127,127,127,.35); font-size: 12px; opacity: .9; }
+    .footer { margin-top: 14px; font-size: 12px; opacity: .8; }
+    .btnrow { display:flex; gap:10px; flex-wrap: wrap; margin-top: 10px; }
+    button { padding: 8px 10px; border-radius: 10px; border: 1px solid rgba(127,127,127,.45); background: rgba(127,127,127,.12); cursor: pointer; }
+    button:hover { filter: brightness(1.05); }
+    .small { font-size: 12px; opacity: .8; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Kalkulator kosztów wideocalli (participant-minutes)</h1>
+    <div class="muted">
+      Model liczenia: <span class="mono">call-minutes = równoległe rozmowy × minuty/dzień × dni/tydzień × tygodnie/mies.</span>,
+      potem <span class="mono">participant-minutes = call-minutes × średnia liczba uczestników</span>.
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>Parametry obciążenia</h2>
+
+        <div class="row">
+          <label for="concurrentCalls">Równoległe rozmowy (w danym momencie)</label>
+          <input id="concurrentCalls" type="number" min="0" step="1" value="40" />
+        </div>
+
+        <div class="row">
+          <label for="hoursPerDay">Godzin dziennie</label>
+          <input id="hoursPerDay" type="number" min="0" step="0.25" value="5" />
+        </div>
+
+        <div class="row">
+          <label for="daysPerWeek">Dni w tygodniu</label>
+          <input id="daysPerWeek" type="number" min="0" step="1" value="5" />
+        </div>
+
+        <div class="row">
+          <label for="weeksPerMonth">Tygodni na miesiąc (średnio)</label>
+          <input id="weeksPerMonth" type="number" min="1" step="0.01" value="4.33" />
+        </div>
+
+        <div class="row">
+          <label for="avgParticipants">Średnia liczba uczestników na callu</label>
+          <input id="avgParticipants" type="number" min="1" max="50" step="0.1" value="3" />
+        </div>
+
+        <div class="row">
+          <label for="showScenarios">Pokaż scenariusze 2/3/5 osób</label>
+          <input id="showScenarios" type="number" min="0" max="1" step="1" value="1" />
+        </div>
+
+        <div class="hint">
+          Wskazówka: jeżeli zwykle są 2 osoby (nauczyciel + uczeń), ustaw średnią na 2.
+          Jeśli często dołączają 3–5 osób, średnia rośnie i koszt rośnie liniowo.
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Stawki (USD za participant-minute)</h2>
+
+        <div class="row">
+          <label for="rateZoom">Zoom Video SDK (domyślnie 0.0035)</label>
+          <input id="rateZoom" type="number" min="0" step="0.0001" value="0.0035" />
+        </div>
+
+        <div class="row">
+          <label for="rateDaily">Daily (domyślnie 0.0040)</label>
+          <input id="rateDaily" type="number" min="0" step="0.0001" value="0.0040" />
+        </div>
+
+        <div class="row">
+          <label for="rateTwilio">Twilio Video (domyślnie 0.0040)</label>
+          <input id="rateTwilio" type="number" min="0" step="0.0001" value="0.0040" />
+        </div>
+
+        <div class="row">
+          <label for="rate100ms">100ms (domyślnie 0.0040)</label>
+          <input id="rate100ms" type="number" min="0" step="0.0001" value="0.0040" />
+        </div>
+
+        <div class="row">
+          <label for="rateAgora">Agora (np. HD ~0.00399)</label>
+          <input id="rateAgora" type="number" min="0" step="0.0001" value="0.00399" />
+        </div>
+
+        <div class="row">
+          <label for="usdToPln">Kurs USD→PLN (opcjonalnie)</label>
+          <input id="usdToPln" type="number" min="0" step="0.01" value="4.00" />
+        </div>
+
+        <div class="btnrow">
+          <button id="resetBtn" type="button">Reset do wartości domyślnych</button>
+          <button id="copyLinkBtn" type="button">Skopiuj link z parametrami</button>
+        </div>
+
+        <div class="footer">
+          Uwaga: to jest kalkulator kosztu „wideo-minut”. Nie uwzględnia nagrywania, storage, czatu, tablicy, ani kosztów dev/hosting.
+        </div>
+      </div>
+
+      <div class="card" style="grid-column: 1 / -1;">
+        <h2>Wyniki</h2>
+
+        <div class="kpi">
+          <div class="box">
+            <div class="small">Call-minutes / miesiąc</div>
+            <div class="val mono" id="callMinutes">—</div>
+          </div>
+          <div class="box">
+            <div class="small">Participant-minutes / miesiąc</div>
+            <div class="val mono" id="participantMinutes">—</div>
+          </div>
+        </div>
+
+        <table id="resultsTable">
+          <thead>
+            <tr>
+              <th>Dostawca</th>
+              <th>Stawka (USD / participant-min)</th>
+              <th>Koszt / miesiąc (USD)</th>
+              <th>Koszt / miesiąc (PLN)</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+
+        <div id="scenarioBlock" style="margin-top: 14px;"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+
+  const defaults = {
+    concurrentCalls: 40,
+    hoursPerDay: 5,
+    daysPerWeek: 5,
+    weeksPerMonth: 4.33,
+    avgParticipants: 3,
+    showScenarios: 1,
+    rateZoom: 0.0035,
+    rateDaily: 0.0040,
+    rateTwilio: 0.0040,
+    rate100ms: 0.0040,
+    rateAgora: 0.00399,
+    usdToPln: 4.00,
+  };
+
+  const providers = [
+    { key: "zoom",  name: "Zoom Video SDK",  rateId: "rateZoom"  },
+    { key: "daily", name: "Daily",          rateId: "rateDaily" },
+    { key: "twilio",name: "Twilio Video",   rateId: "rateTwilio"},
+    { key: "100ms", name: "100ms",          rateId: "rate100ms" },
+    { key: "agora", name: "Agora",          rateId: "rateAgora" },
+  ];
+
+  function fmtInt(n) {
+    if (!isFinite(n)) return "—";
+    return Math.round(n).toLocaleString("pl-PL");
+  }
+  function fmtMoney(n) {
+    if (!isFinite(n)) return "—";
+    return n.toLocaleString("pl-PL", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function getNum(id) {
+    const v = parseFloat($(id).value);
+    return isFinite(v) ? v : 0;
+  }
+
+  function calc(callCount, hPerDay, dPerWeek, wPerMonth, avgP) {
+    const minutesPerDay = hPerDay * 60;
+    const callMinutesMonth = callCount * minutesPerDay * dPerWeek * wPerMonth;
+    const participantMinutesMonth = callMinutesMonth * avgP;
+    return { callMinutesMonth, participantMinutesMonth };
+  }
+
+  function render() {
+    const concurrentCalls = getNum("concurrentCalls");
+    const hoursPerDay     = getNum("hoursPerDay");
+    const daysPerWeek     = getNum("daysPerWeek");
+    const weeksPerMonth   = getNum("weeksPerMonth");
+    const avgParticipants = getNum("avgParticipants");
+    const usdToPln        = getNum("usdToPln");
+    const showScenarios   = Math.round(getNum("showScenarios")) === 1;
+
+    const { callMinutesMonth, participantMinutesMonth } =
+      calc(concurrentCalls, hoursPerDay, daysPerWeek, weeksPerMonth, avgParticipants);
+
+    $("callMinutes").textContent = fmtInt(callMinutesMonth);
+    $("participantMinutes").textContent = fmtInt(participantMinutesMonth);
+
+    const tbody = $("resultsTable").querySelector("tbody");
+    tbody.innerHTML = "";
+
+    const rows = providers.map(p => {
+      const rate = getNum(p.rateId);
+      const costUsd = participantMinutesMonth * rate;
+      const costPln = costUsd * usdToPln;
+      return { ...p, rate, costUsd, costPln };
+    }).sort((a,b) => a.costUsd - b.costUsd);
+
+    for (const r of rows) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${r.name} <span class="badge">wariant: ${r.key}</span></td>
+        <td class="mono">${r.rate.toFixed(4)}</td>
+        <td class="mono">${fmtMoney(r.costUsd)}</td>
+        <td class="mono">${fmtMoney(r.costPln)}</td>
+      `;
+      tbody.appendChild(tr);
+    }
+
+    const scenarioBlock = $("scenarioBlock");
+    if (!showScenarios) {
+      scenarioBlock.innerHTML = "";
+      return;
+    }
+
+    const scenarios = [2, 3, 5];
+    let html = `<div class="small" style="margin-bottom:8px; opacity:.85;">Szybkie scenariusze (przy tych samych parametrach czasu i równoległości):</div>`;
+    html += `<table><thead><tr>
+      <th>Śr. uczestników</th>
+      <th>Participant-min / mies.</th>
+      <th>Najtańszy dostawca (USD / mies.)</th>
+      <th>Najtańszy dostawca (PLN / mies.)</th>
+    </tr></thead><tbody>`;
+
+    for (const s of scenarios) {
+      const { participantMinutesMonth: pm } = calc(concurrentCalls, hoursPerDay, daysPerWeek, weeksPerMonth, s);
+      const best = providers.map(p => {
+        const rate = getNum(p.rateId);
+        const costUsd = pm * rate;
+        return { name: p.name, costUsd };
+      }).sort((a,b) => a.costUsd - b.costUsd)[0];
+
+      html += `<tr>
+        <td class="mono">${s.toFixed(1)}</td>
+        <td class="mono">${fmtInt(pm)}</td>
+        <td class="mono">${best.name} — ${fmtMoney(best.costUsd)}</td>
+        <td class="mono">${fmtMoney(best.costUsd * usdToPln)}</td>
+      </tr>`;
+    }
+    html += `</tbody></table>`;
+    scenarioBlock.innerHTML = html;
+  }
+
+  function reset() {
+    for (const [k,v] of Object.entries(defaults)) {
+      $(k).value = v;
+    }
+    render();
+  }
+
+  // URL params (dla share/linków)
+  function loadFromUrl() {
+    const params = new URLSearchParams(location.search);
+    for (const key of Object.keys(defaults)) {
+      if (params.has(key)) $(key).value = params.get(key);
+    }
+  }
+
+  function makeShareUrl() {
+    const params = new URLSearchParams();
+    for (const key of Object.keys(defaults)) params.set(key, $(key).value);
+    const base = location.origin + location.pathname;
+    return base + "?" + params.toString();
+  }
+
+  async function copyLink() {
+    const url = makeShareUrl();
+    try {
+      await navigator.clipboard.writeText(url);
+      $("copyLinkBtn").textContent = "Skopiowano ✅";
+      setTimeout(() => $("copyLinkBtn").textContent = "Skopiuj link z parametrami", 1200);
+    } catch {
+      prompt("Skopiuj ręcznie:", url);
+    }
+  }
+
+  // wiring
+  const ids = Object.keys(defaults);
+  ids.forEach(id => $(id).addEventListener("input", render));
+  $("resetBtn").addEventListener("click", reset);
+  $("copyLinkBtn").addEventListener("click", copyLink);
+
+  loadFromUrl();
+  render();
+})();
+</script>
+</body>
+</html>
+
